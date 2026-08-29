@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>سامانه مدیریت HSE</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', sans-serif; background: #f5f5f5; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 10px; }
+        
+        .login-screen { display: flex; align-items: center; justify-content: center; min-height: 100vh; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .login-box { background: white; padding: 30px; border-radius: 10px; box-shadow: 0 10px 40px rgba(0,0,0,0.2); width: 100%; max-width: 350px; }
+        .login-box h1 { text-align: center; margin-bottom: 30px; color: #333; }
+        
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; margin-bottom: 8px; font-weight: 600; }
+        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 5px; font-size: 16px; font-family: inherit; }
+        .form-group textarea { min-height: 100px; }
+        
+        .btn { width: 100%; padding: 12px; background: #667eea; color: white; border: none; border-radius: 5px; font-size: 16px; font-weight: 600; cursor: pointer; transition: 0.3s; }
+        .btn:hover { background: #764ba2; }
+        
+        .dashboard { display: none; }
+        .header { background: white; padding: 15px; margin-bottom: 15px; border-radius: 5px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .header h2 { color: #333; margin-bottom: 5px; }
+        
+        .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+        .stat-card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); text-align: center; }
+        .stat-card .number { font-size: 28px; font-weight: bold; color: #667eea; }
+        .stat-card .label { font-size: 12px; color: #999; margin-top: 5px; }
+        
+        .menu { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+        .menu-btn { padding: 20px; background: white; border: none; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); cursor: pointer; font-size: 14px; font-weight: 600; }
+        .menu-btn.primary { background: #667eea; color: white; }
+        .menu-btn.warning { background: #ff6b6b; color: white; }
+        .menu-btn.success { background: #51cf66; color: white; }
+        .menu-btn.info { background: #4dabf7; color: white; }
+        
+        .form-card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        .form-card h3 { margin-bottom: 20px; color: #333; }
+        
+        .list-item { background: white; padding: 15px; margin-bottom: 10px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .list-item .title { font-weight: 600; color: #333; margin-bottom: 5px; }
+        .list-item .meta { font-size: 12px; color: #999; }
+        
+        .badge { display: inline-block; padding: 3px 8px; border-radius: 3px; font-size: 12px; font-weight: 600; margin: 8px 5px 0 0; }
+        .badge.critical { background: #ff6b6b; color: white; }
+        .badge.warning { background: #ffa500; color: white; }
+        .badge.info { background: #667eea; color: white; }
+        
+        .back-btn { background: #999; margin-bottom: 15px; width: 100%; padding: 10px; border: none; border-radius: 5px; cursor: pointer; font-weight: 600; color: white; }
+        .back-btn:hover { background: #777; }
+        
+        .logout-btn { background: #ff6b6b; margin-bottom: 10px; }
+        .logout-btn:hover { background: #ff5252; }
+        
+        .empty-message { text-align: center; color: #999; padding: 20px; }
+        
+        @media (max-width: 600px) {
+            .stats { grid-template-columns: 1fr; }
+            .menu { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- Login -->
+<div id="loginScreen" class="login-screen">
+    <div class="login-box">
+        <h1>🏭 سامانه HSE</h1>
+        <div class="form-group">
+            <label>نام کاربری</label>
+            <input type="text" id="username" placeholder="supervisor">
+        </div>
+        <div class="form-group">
+            <label>رمز عبور</label>
+            <input type="password" id="password" placeholder="1001">
+        </div>
+        <button class="btn" onclick="login()">ورود</button>
+        <p style="text-align: center; margin-top: 15px; font-size: 12px; color: #999;">
+            supervisor / 1001<br>officer1 / 3001
+        </p>
+    </div>
+</div>
+
+<!-- Dashboard -->
+<div id="dashboardScreen" class="dashboard">
+    <div class="container">
+        <div class="header">
+            <h2>📊 داشبورد HSE</h2>
+            <p id="userGreeting">خوش آمدید</p>
+        </div>
+
+        <div class="stats">
+            <div class="stat-card">
+                <div class="number" id="totalFindings">0</div>
+                <div class="label">کل ایرادات</div>
+            </div>
+            <div class="stat-card">
+                <div class="number" id="openFindings">0</div>
+                <div class="label">ایرادات باز</div>
+            </div>
+            <div class="stat-card">
+                <div class="number" id="correctiveActions">0</div>
+                <div class="label">اقدامات</div>
+            </div>
+            <div class="stat-card">
+                <div class="number" id="incidents">0</div>
+                <div class="label">حوادث</div>
+            </div>
+        </div>
+
+        <div class="menu">
+            <button class="menu-btn primary" onclick="goToNewFinding()">➕ ایراد جدید</button>
+            <button class="menu-btn info" onclick="showFindingsList()">📋 لیست ایرادات</button>
+            <button class="menu-btn success" onclick="goToNewAction()">✓ اقدام جدید</button>
+            <button class="menu-btn warning" onclick="goToNewIncident()">⚠️ حادثه جدید</button>
+        </div>
+
+        <button class="btn logout-btn" onclick="logout()">🚪 خروج</button>
+    </div>
+</div>
+
+<!-- New Finding -->
+<div id="newFindingScreen" class="dashboard">
+    <div class="container">
+        <button class="back-btn" onclick="backToDashboard()">← بازگشت</button>
+        <div class="form-card">
+            <h3>ثبت ایراد جدید</h3>
+            <div class="form-group">
+                <label>واحد</label>
+                <select id="unitSelect">
+                    <option>سالن رنگ</option>
+                    <option>تزئینات</option>
+                    <option>بدنه‌ستزی</option>
+                    <option>انبار مرکزی</option>
+                    <option>موتورخانه</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>سطح ریسک</label>
+                <select id="riskLevel">
+                    <option value="A">A - بحرانی</option>
+                    <option value="B">B - مهم</option>
+                    <option value="C">C - کم‌خطر</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>عنوان</label>
+                <input type="text" id="findingTitle" placeholder="عنوان ایراد">
+            </div>
+            <div class="form-group">
+                <label>شرح</label>
+                <textarea id="findingDesc" placeholder="شرح تفصیلی"></textarea>
+            </div>
+            <button class="btn" onclick="saveFinding()">✓ ثبت ایراد</button>
+        </div>
+    </div>
+</div>
+
+<!-- Findings List -->
+<div id="findingsListScreen" class="dashboard">
+    <div class="container">
+        <button class="back-btn" onclick="backToDashboard()">← بازگشت</button>
+        <h2 style="margin-bottom: 15px;">📋 لیست ایرادات</h2>
+        <div id="findingsList"></div>
+    </div>
+</div>
+
+<!-- New Action -->
+<div id="newActionScreen" class="dashboard">
+    <div class="container">
+        <button class="back-btn" onclick="backToDashboard()">← بازگشت</button>
+        <div class="form-card">
+            <h3>اقدام اصلاحی جدید</h3>
+            <div class="form-group">
+                <label>شماره ایراد</label>
+                <input type="text" id="findingRef" placeholder="F-2024-00001">
+            </div>
+            <div class="form-group">
+                <label>عنوان اقدام</label>
+                <input type="text" id="actionTitle" placeholder="عنوان">
+            </div>
+            <div class="form-group">
+                <label>شرح</label>
+                <textarea id="actionDesc" placeholder="شرح اقدام"></textarea>
+            </div>
+            <div class="form-group">
+                <label>مهلت</label>
+                <input type="date" id="dueDate">
+            </div>
+            <button class="btn" onclick="saveAction()">✓ ثبت اقدام</button>
+        </div>
+    </div>
+</div>
+
+<!-- New Incident -->
+<div id="newIncidentScreen" class="dashboard">
+    <div class="container">
+        <button class="back-btn" onclick="backToDashboard()">← بازگشت</button>
+        <div class="form-card">
+            <h3>ثبت حادثه</h3>
+            <div class="form-group">
+                <label>واحد</label>
+                <select id="incidentUnit">
+                    <option>سالن رنگ</option>
+                    <option>تزئینات</option>
+                    <option>بدنه‌ستزی</option>
+                    <option>انبار مرکزی</option>
+                    <option>موتورخانه</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>نوع</label>
+                <select id="incidentType">
+                    <option value="incident">حادثه</option>
+                    <option value="near-miss">شبه‌حادثه</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>شرح</label>
+                <textarea id="incidentDesc" placeholder="توضیح حادثه"></textarea>
+            </div>
+            <div class="form-group">
+                <label>شدت</label>
+                <select id="severity">
+                    <option value="mild">خفیف</option>
+                    <option value="moderate">متوسط</option>
+                    <option value="severe">شدید</option>
+                </select>
+            </div>
+            <button class="btn" onclick="saveIncident()">✓ ثبت حادثه</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    let currentUser = null;
+    let findings = JSON.parse(localStorage.getItem('findings')) || [];
+    let actions = JSON.parse(localStorage.getItem('actions')) || [];
+    let incidents = JSON.parse(localStorage.getItem('incidents')) || [];
+
+    const users = {
+        'supervisor': { password: '1001', name: 'علی محمدی', role: 'supervisor' },
+        'officer1': { password: '3001', name: 'محمد رضایی', role: 'officer' }
+    };
+
+    function login() {
+        const username = document.getElementById('username').value.trim();
+        const password = document.getElementById('password').value;
+        if (!username || !password) { alert('لطفا فیلدها را پر کنید'); return; }
+        if (users[username] && users[username].password === password) {
+            currentUser = users[username];
+            currentUser.username = username;
+            localStorage.setItem('currentUser', JSON.stringify(currentUser));
+            showDashboard();
+            updateDashboard();
+        } else {
+            alert('نام کاربری یا رمز اشتباه است!');
+        }
+    }
+
+    function logout() {
+        if (confirm('آیا می‌خواهید خارج شوید؟')) {
+            currentUser = null;
+            localStorage.removeItem('currentUser');
+            location.reload();
+        }
+    }
+
+    function showDashboard() {
+        document.querySelectorAll('.dashboard').forEach(el => el.style.display = 'none');
+        document.getElementById('loginScreen').style.display = 'none';
+        document.getElementById('dashboardScreen').style.display = 'block';
+        document.getElementById('userGreeting').innerText = `سلام ${currentUser.name} 👋`;
+    }
+
+    function backToDashboard() { showDashboard(); updateDashboard(); }
+    function goToNewFinding() { document.querySelectorAll('.dashboard').forEach(el => el.style.display = 'none'); document.getElementById('newFindingScreen').style.display = 'block'; }
+    function showFindingsList() { document.querySelectorAll('.dashboard').forEach(el => el.style.display = 'none'); document.getElementById('findingsListScreen').style.display = 'block'; displayFindings(); }
+    function goToNewAction() { document.querySelectorAll('.dashboard').forEach(el => el.style.display = 'none'); document.getElementById('newActionScreen').style.display = 'block'; }
+    function goToNewIncident() { document.querySelectorAll('.dashboard').forEach(el => el.style.display = 'none'); document.getElementById('newIncidentScreen').style.display = 'block'; }
+
+    function saveFinding() {
+        const title = document.getElementById('findingTitle').value.trim();
+        const desc = document.getElementById('findingDesc').value.trim();
+        if (!title || !desc) { alert('لطفا فیلدها را پر کنید'); return; }
+        const finding = {
+            id: 'F-' + new Date().getFullYear() + '-' + String(findings.length + 1).padStart(5, '0'),
+            unit: document.getElementById('unitSelect').value,
+            title, desc, risk: document.getElementById('riskLevel').value,
+            status: 'open', createdBy: currentUser.name, date: new Date().toLocaleDateString('fa-IR')
+        };
+        findings.push(finding);
+        localStorage.setItem('findings', JSON.stringify(findings));
+        alert('✓ ثبت شد: ' + finding.id);
+        document.getElementById('findingTitle').value = '';
+        document.getElementById('findingDesc').value = '';
+        showDashboard();
+        updateDashboard();
+    }
+
+    function saveAction() {
+        const title = document.getElementById('actionTitle').value.trim();
+        const desc = document.getElementById('actionDesc').value.trim();
+        const findingRef = document.getElementById('findingRef').value.trim();
+        const dueDate = document.getElementById('dueDate').value;
+        if (!title || !desc || !findingRef || !dueDate) { alert('لطفا فیلدها را پر کنید'); return; }
+        const action = {
+            id: 'CA-' + new Date().getFullYear() + '-' + String(actions.length + 1).padStart(5, '0'),
+            findingRef, title, desc, dueDate, status: 'new',
+            createdBy: currentUser.name, date: new Date().toLocaleDateString('fa-IR')
+        };
+        actions.push(action);
+        localStorage.setItem('actions', JSON.stringify(actions));
+        alert('✓ ثبت شد: ' + action.id);
+        document.getElementById('actionTitle').value = '';
+        document.getElementById('actionDesc').value = '';
+        document.getElementById('findingRef').value = '';
+        document.getElementById('dueDate').value = '';
+        showDashboard();
+        updateDashboard();
+    }
+
+    function saveIncident() {
+        const desc = document.getElementById('incidentDesc').value.trim();
+        if (!desc) { alert('لطفا شرح را وارد کنید'); return; }
+        const incident = {
+            id: 'I-' + new Date().getFullYear() + '-' + String(incidents.length + 1).padStart(5, '0'),
+            unit: document.getElementById('incidentUnit').value,
+            type: document.getElementById('incidentType').value,
+            desc, severity: document.getElementById('severity').value,
+            createdBy: currentUser.name, date: new Date().toLocaleDateString('fa-IR')
+        };
+        incidents.push(incident);
+        localStorage.setItem('incidents', JSON.stringify(incidents));
+        alert('✓ ثبت شد: ' + incident.id);
+        document.getElementById('incidentDesc').value = '';
+        showDashboard();
+        updateDashboard();
+    }
+
+    function displayFindings() {
+        const container = document.getElementById('findingsList');
+        container.innerHTML = '';
+        if (findings.length === 0) {
+            container.innerHTML = '<div class="empty-message">ثبتی وجود ندارد</div>';
+            return;
+        }
+        findings.forEach(f => {
+            const colors = { A: 'critical', B: 'warning', C: 'info' };
+            container.innerHTML += `
+                <div class="list-item">
+                    <div class="title">${f.title}</div>
+                    <div class="meta">${f.id} | ${f.unit} | ${f.date}</div>
+                    <span class="badge ${colors[f.risk]}">ریسک: ${f.risk}</span>
+                    <div style="margin-top: 10px; font-size: 12px; color: #666;">${f.desc}</div>
+                </div>
+            `;
+        });
+    }
+
+    function updateDashboard() {
+        document.getElementById('totalFindings').innerText = findings.length;
+        document.getElementById('openFindings').innerText = findings.filter(f => f.status === 'open').length;
+        document.getElementById('correctiveActions').innerText = actions.length;
+        document.getElementById('incidents').innerText = incidents.length;
+    }
+
+    window.addEventListener('load', () => {
+        const saved = localStorage.getItem('currentUser');
+        if (saved) {
+            currentUser = JSON.parse(saved);
+            showDashboard();
+            updateDashboard();
+        }
+    });
+</script>
+
+</body>
+</html>
